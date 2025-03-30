@@ -13,6 +13,7 @@ tron_game = TronGame()
 
 
 while running:
+    
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
@@ -20,13 +21,15 @@ while running:
     tron_game.player1.draw_player()
     tron_game.player2.draw_player()
 
-    #tron_game.update_state()
+    
+
+    tron_game.update_state()
     # flip() the display to put your work on screen
     pygame.display.flip()
 
     # limits FPS to 60
     # dt is delta time in seconds since last frame, used for framerate-
     # independent physics.
-    dt = clock.tick(60) / 1000
+    dt = clock.tick(60)
 
 pygame.quit()
