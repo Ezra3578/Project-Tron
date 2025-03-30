@@ -14,7 +14,7 @@ class TronGame:
     
     
     def update_state(self):
-
+        
         key = pygame.key.get_pressed()
     
         if key[pygame.K_w] or key[pygame.K_a] or key[pygame.K_s] or key[pygame.K_d]:
