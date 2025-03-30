@@ -1,32 +1,26 @@
 import pygame
+from pygame.locals import *
+from game import TronGame
 
 pygame.init()
-screen = pygame.display.set_mode((1280, 720))
 clock = pygame.time.Clock()
 running = True
+pygame.display.set_caption("TRON")
 dt = 0
 
-player_pos = pygame.Vector2(screen.get_width() / 2, screen.get_height() / 2)
+#inicialización del juego
+tron_game = TronGame()
+
 
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
 
-    screen.fill("purple")
+    tron_game.player1.draw_player()
+    tron_game.player2.draw_player()
 
-    pygame.draw.circle(screen, "red", player_pos, 20)
-
-    keys = pygame.key.get_pressed()
-    if keys[pygame.K_w]:
-        player_pos.y -= 300 * dt
-    if keys[pygame.K_s]:
-        player_pos.y += 300 * dt
-    if keys[pygame.K_a]:
-        player_pos.x -= 300 * dt
-    if keys[pygame.K_d]:
-        player_pos.x += 300 * dt
-
+    #tron_game.update_state()
     # flip() the display to put your work on screen
     pygame.display.flip()
 
