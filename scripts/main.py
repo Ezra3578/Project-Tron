@@ -4,7 +4,7 @@ from game import TronGame
 
 pygame.init()
 clock = pygame.time.Clock()
-running = True
+#running = True
 pygame.display.set_caption("TRON")
 dt = 0
 
@@ -12,17 +12,16 @@ dt = 0
 tron_game = TronGame()
 
 
-while running:
+while tron_game.running:
     
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            running = False
+            tron_game.running = False
 
     tron_game.player1.draw_player()
     tron_game.player2.draw_player()
 
     
-
     tron_game.update_state()
     # flip() the display to put your work on screen
     pygame.display.flip()
