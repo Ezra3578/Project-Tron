@@ -11,6 +11,8 @@ dt = 0
 #inicialización del juego
 tron_game = TronGame()
 
+tron_game.player1.direction.x = 1
+tron_game.player2.direction.x = -1
 
 while tron_game.running:
     
@@ -23,12 +25,9 @@ while tron_game.running:
 
     
     tron_game.update_state()
-    # flip() the display to put your work on screen
+
     pygame.display.flip()
 
-    # limits FPS to 60
-    # dt is delta time in seconds since last frame, used for framerate-
-    # independent physics.
     dt = clock.tick(60)
 
 pygame.quit()

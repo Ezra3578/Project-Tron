@@ -3,8 +3,8 @@ from pygame.math import Vector2
 
 class Player:
     def __init__(self, x, y, screen, color):
-        self.position = Vector2(x, y) #posición en cada frame
-        self.speed = 12  # Velocidad de movimiento
+        self.position = pygame.Vector2(x, y) #posición en cada frame
+        self.speed = 4  # Velocidad de movimiento
         self.screen = screen
         self.color = color
         self.direction = Vector2(0, 0) #vector dirección al que apunta
@@ -13,7 +13,7 @@ class Player:
         # key_mapping va a ser un diccionario con las teclas para cada dirección:
         new_direction = Vector2(0, 0) #para realizar el cambio de dirección una vez se cambie la tecla
         
-        if keys[key_mapping['left']]:
+        if keys[key_mapping['left']]: #por ejemplo key_mapping['left'] va a ser pygame.k_left para player 2 y pygame.k_a para player 1
             new_direction.x = -1
         if keys[key_mapping['right']]:
             new_direction.x = 1
@@ -28,4 +28,4 @@ class Player:
         self.position += self.direction * self.speed    #actualiza la posición
 
     def draw_player(self):
-        pygame.draw.circle(self.screen, self.color, (int(self.position.x), int(self.position.y)), 23)
+        pygame.draw.circle(self.screen, self.color, (int(self.position.x), int(self.position.y)), 1)
