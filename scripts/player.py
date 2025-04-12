@@ -13,13 +13,13 @@ class Player:
         # key_mapping va a ser un diccionario con las teclas para cada dirección:
         new_direction = Vector2(0, 0) #para realizar el cambio de dirección una vez se cambie la tecla
         
-        if keys[key_mapping['left']]: #por ejemplo key_mapping['left'] va a ser pygame.k_left para player 2 y pygame.k_a para player 1
+        if keys[key_mapping['left']] and self.direction.x != 1: #por ejemplo key_mapping['left'] va a ser pygame.k_left para player 2 y pygame.k_a para player 1
             new_direction.x = -1
-        if keys[key_mapping['right']]:
+        elif keys[key_mapping['right']]and self.direction.x != -1:
             new_direction.x = 1
-        if keys[key_mapping['up']]:
+        elif keys[key_mapping['up']]and self.direction.y != 1:
             new_direction.y = -1
-        if keys[key_mapping['down']]:
+        elif keys[key_mapping['down']]and self.direction.y != -1:
             new_direction.y = 1
 
         if new_direction.length() > 0:
