@@ -2,10 +2,10 @@ import pygame
 from player import Player
 class TronGame:
     def __init__(self):
-        screen = pygame.display.set_mode((1280, 720))
+        self.screen = pygame.display.set_mode((1280, 720))
 
-        self.player1 = Player(128, 360, screen, "RED")
-        self.player2 = Player(1152, 360, screen, "BLUE")
+        self.player1 = Player(128, 360, self.screen, "RED")
+        self.player2 = Player(1152, 360, self.screen, "BLUE")
 
         self.clock = pygame.time.Clock()
         self.running = True

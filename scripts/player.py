@@ -8,6 +8,7 @@ class Player:
         self.screen = screen
         self.color = color
         self.direction = Vector2(0, 0) #vector dirección al que apunta
+        self.size = 20
 
     def move(self, keys, key_mapping):
         # key_mapping va a ser un diccionario con las teclas para cada dirección:
@@ -28,4 +29,6 @@ class Player:
         self.position += self.direction * self.speed    #actualiza la posición
 
     def draw_player(self):
-        pygame.draw.circle(self.screen, self.color, (int(self.position.x), int(self.position.y)), 1)
+        pygame.draw.circle(self.screen, self.color, (int(self.position.x), int(self.position.y)), self.size)
+
+    
