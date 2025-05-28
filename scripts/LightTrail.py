@@ -7,14 +7,14 @@ class LightTrail:
         self.color = color
         self.lightPoints = []
         self.radius = 5
-        self.size = 60
+        self.size = 400
         
     def updateTrail(self):
         pos = (int(self.player.position.x),int(self.player.position.y))
         self.lightPoints.append(pos)
 
         if len(self.lightPoints) > self.size:
-            self.lightPoints.pop(0)
+            self.lightPoints.pop(0)  
 
 
     def drawTrail(self, screen):
