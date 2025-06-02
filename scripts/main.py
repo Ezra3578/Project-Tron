@@ -1,6 +1,8 @@
+import random
 import pygame
 from pygame.locals import *
 from game import TronGame
+from LightTrail import LightTrail
 
 
 pygame.init()
@@ -11,8 +13,11 @@ pygame.display.set_caption("TRON")
 #inicialización del juego
 tron_game = TronGame()
 
+
+
 tron_game.player1.direction = pygame.Vector2(1,0) #inicia moviendose a la derecha
 tron_game.player2.direction = pygame.Vector2(-1,0) #inicia moviendose a la izquierda
+
 
 
 
@@ -34,6 +39,15 @@ while tron_game.running:
             elif event.key == tron_game.mapping_player1['down']:
                 tron_game.player1.change_direction(pygame.Vector2(0, 1))
 
+            if event.key == tron_game.mapping_player1['toggle']:  #Cuando queira apagar/encender la estela de luz, este botón tendrá un 70% de probabilidad de funcionar
+                if random.random() < 0.7:
+                    tron_game.player1.trailEnabled = not tron_game.player1.trailEnabled
+                    
+                    print("trial toggled p1")
+                else:
+                    print("trial toggle p1 failed")
+            
+
             # Player 2
             if event.key == tron_game.mapping_player2['left']:
                 tron_game.player2.change_direction(pygame.Vector2(-1, 0))
@@ -43,6 +57,14 @@ while tron_game.running:
                 tron_game.player2.change_direction(pygame.Vector2(0, -1))
             elif event.key == tron_game.mapping_player2['down']:
                 tron_game.player2.change_direction(pygame.Vector2(0, 1))
+
+            if event.key == tron_game.mapping_player2['toggle']:  #Cuando queira apagar/encender la estela de luz, este botón tendrá un 70% de probabilidad de funcionar
+                if random.random() < 0.7:
+                    tron_game.player2.trailEnabled = not tron_game.player2.trailEnabled
+                    
+                    print("trial toggled p2")
+                else:
+                    print("trial toggle p2 failed")
 
     tron_game.screen.fill((0, 0, 0))  # <--- limpia la pantalla
 

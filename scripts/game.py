@@ -11,14 +11,16 @@ class TronGame:
             'left': pygame.K_a,
             'right': pygame.K_d,
             'up': pygame.K_w,
-            'down': pygame.K_s
+            'down': pygame.K_s,
+            'toggle': pygame.K_LSHIFT 
 
         }
         self.mapping_player2 = {
             'left': pygame.K_LEFT,
             'right': pygame.K_RIGHT,
             'up': pygame.K_UP,
-            'down': pygame.K_DOWN
+            'down': pygame.K_DOWN,
+            'toggle': pygame.K_RSHIFT
         }
 
         self.screen = pygame.display.set_mode((1280, 720))

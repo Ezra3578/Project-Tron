@@ -16,6 +16,7 @@ class LightTrail:
         self.lightPoints = [] #guarda los trazos de luz (posiciones y tiempo)
         self.duration = 10 #numero de segundos que tarda en desaparecer  
         ####
+        
 
     def updateTrail(self):
 #        pos = (int(self.player.old_position.x),int(self.player.old_position.y))
@@ -23,15 +24,17 @@ class LightTrail:
 
 #        if len(self.lightPoints) > self.size:
 #            self.lightPoints.pop(0)
+            
         ####
-        current_time = time.time()
-        pos = (int(self.player.old_position.x), int(self.player.old_position.y), current_time)
-        self.lightPoints.append(pos)
+        if self.player.getTrailEstate():  #Solo guardar la posición si la estela está encendida
+                current_time = time.time()
+                pos = (int(self.player.old_position.x), int(self.player.old_position.y), current_time)
+                self.lightPoints.append(pos)
 
-        #para filtrar los rastros que deben desaparecer:
-        self.lightPoints = [
-           (x,y,t) for (x,y,t) in self.lightPoints if current_time - t <self.duration
-        ]
+                #para filtrar los rastros que deben desaparecer:
+                self.lightPoints = [
+                (x,y,t) for (x,y,t) in self.lightPoints if current_time - t <self.duration
+                ]
         ####
 
     def drawTrail(self, screen,cell_size):

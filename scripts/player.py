@@ -10,6 +10,8 @@ class Player:
         self.screen = screen
         self.color = color
 
+        self.trailEnabled = True
+
         self.cell_size = cell_size
         self.size = self.cell_size // 2
         
@@ -18,11 +20,14 @@ class Player:
 
         self.key_mapping = key_mapping
 
+
+    def getTrailEstate(self):
+        return self.trailEnabled
+    
+
     def move(self, dt):
 
         self.time_since_move += dt
-
-        
 
         if self.time_since_move >= self.move_delay:
             self.time_since_move = 0
