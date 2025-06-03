@@ -10,7 +10,9 @@ class Player:
         self.screen = screen
         self.color = color
 
+        self.isAlive = True
         self.trailEnabled = True
+        self.has_moved = False
 
         self.cell_size = cell_size
         self.size = self.cell_size // 2
@@ -33,7 +35,8 @@ class Player:
             self.time_since_move = 0
             self.old_position = self.position.copy() #se guarda la posicion antes de moverse para luego pasarla al trazo de luz
             self.position += self.direction    #actualiza la posición
-        
+            self.has_moved = True
+           
 
     def change_direction(self, new_dir):
         # Cambia de dirección si no es la contraria
@@ -45,4 +48,5 @@ class Player:
         pixel_x = int(self.position.x * self.cell_size + self.cell_size // 2) #puts the center of the player on the center of the map square
         pixel_y = int(self.position.y * self.cell_size + self.cell_size // 2)
         pygame.draw.circle(self.screen, self.color, (pixel_x, pixel_y), self.size - 2)
+
 

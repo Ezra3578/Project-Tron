@@ -28,6 +28,14 @@ class TronGame:
         self.grid_cols = self.screen.get_width() // self.cell_size  #cambiado a columnas
         self.grid_rows = self.screen.get_height() // self.cell_size #cambiado a filas
 
+        self.borders = []
+        for col in range(self.grid_cols):
+            self.borders.append((col,0))        #borde superior
+            self.borders.append((col, self.grid_rows-1))  #borde inferior
+        for row in range(self.grid_rows-1):
+            self.borders.append((0,row+1))
+            self.borders.append((self.grid_cols-1, row+1))
+
         self.player1 = Player(2, 9, self.screen, "RED", self.cell_size, self.mapping_player1)
         self.player2 = Player(29, 9, self.screen, "BLUE", self.cell_size, self.mapping_player2)
 
@@ -40,27 +48,55 @@ class TronGame:
         self.clock = pygame.time.Clock()
         self.running = True
 
+        self.players = [self.player1, self.player2]
+        self.trails = [self.trail1, self.trail2]
 
 
+    def check_collitions(self):
+        for i, player in enumerate(self.players):
+            player_pos = (int(player.position.x), int(player.position.y))       #recorre los jugadores y guarda sus posiciones
+
+            if player.has_moved:        #si el jugador ya se movio detecta colisiones (evitar colision en el frame inicial)
+            
+                for trail in self.trails:   #recorre las listas de trazos de luz
+                    for (x, y, _) in trail.lightPoints:
+                        if (x, y) == player_pos:    #si las posiciones coinciden hay colision
+                                if trail.player == player:      #muerte por estela propia
+                                    print(f"Jugador {i+1} ({player.color}) colisionó con **su propia** estela en: {x},{y}")
+                                else:   #muerte por estela enemiga
+                                    print(f"Jugador {i+1} ({player.color}) colisionó con la estela **enemiga** en: {x},{y}")
+                                player.isAlive = False
+                                break  # Detenemos después de la primera colisión
+                
+                for (x,y) in self.borders:
+                    if (x,y) == player_pos:
+                        print(f"El jugador {i+1} colisiono con un muro")
+                        player.isAlive = False
+                        break
         
-
-    
+    def draw_borders(self):
+        for (x, y) in self.borders:
+            rect = pygame.Rect(x * self.cell_size, y * self.cell_size, self.cell_size, self.cell_size)
+            pygame.draw.rect(self.screen, (200,200,200), rect)
     
     def update_state(self):
-
+        
 #        self.build_Obs_Matrix()
 
-        self.trail1.updateTrail()
-        self.trail2.updateTrail()
+        dt = self.clock.tick(60)
 
-        self.trail1.drawTrail(self.screen, self.cell_size)
-        self.trail2.drawTrail(self.screen, self.cell_size)
-        
+
+        for trail in self.trails:
+            trail.updateTrail()
+            trail.drawTrail(self.screen, self.cell_size)
+
+
 
         # Actualizamos el movimiento de cada jugador con su propias teclas
-        dt = self.clock.tick(60)
-        self.player1.move(dt)
-        self.player2.move(dt)
+        for player in self.players:
+            player.move(dt)
+            
+        
 
         
 
