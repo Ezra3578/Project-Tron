@@ -27,6 +27,7 @@ while tron_game.running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             tron_game.running = False
+
         
         if event.type == pygame.KEYDOWN:
             # Player 1
@@ -65,13 +66,24 @@ while tron_game.running:
                     print("trial toggled p2")
                 else:
                     print("trial toggle p2 failed")
+        
 
     tron_game.screen.fill((0, 0, 0))  # <--- limpia la pantalla
+
+    tron_game.draw_borders()
 
     tron_game.player1.draw_player()
     tron_game.player2.draw_player()
     
+    
+    tron_game.check_collitions()
+
+    if not tron_game.player1.isAlive or not tron_game.player2.isAlive:
+            tron_game.running = False
+
     tron_game.update_state()
+
+
     pygame.display.flip()
 
 pygame.quit()
