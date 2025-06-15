@@ -23,7 +23,7 @@ class TronGame:
             'toggle': pygame.K_RSHIFT
         }
 
-        self.screen = pygame.display.set_mode((1280, 720))
+        self.screen = pygame.display.set_mode((1360, 800))
         self.cell_size = 40 #la casilla es de 40x40 pixeles
         self.grid_cols = self.screen.get_width() // self.cell_size  #cambiado a columnas
         self.grid_rows = self.screen.get_height() // self.cell_size #cambiado a filas
@@ -81,7 +81,7 @@ class TronGame:
     
     def update_state(self):
         
-#        self.build_Obs_Matrix()
+        self.build_Obs_Matrix()
 
         dt = self.clock.tick(60)
 
@@ -95,45 +95,78 @@ class TronGame:
         # Actualizamos el movimiento de cada jugador con su propias teclas
         for player in self.players:
             player.move(dt)
-            
-        
+
+    def build_Obs_Matrix(self):
+        """
+        Llena self.obs (shape: 8 x filas x columnas) usando coordenadas de casillas.
+        Niveles:
+        0: Bordes
+        1: Player 1
+        2: Player 2
+        3: Estelas
+        4: Dirección X player 1
+        5: Dirección Y player 1
+        6: Dirección X player 2
+        7: Dirección Y player 2
+        """
+        self.obs.fill(0)  # limpia todo
+
+        # Nivel 0: Bordes
+        for (x, y) in self.borders:
+            if 0 <= x < self.grid_cols and 0 <= y < self.grid_rows:
+                self.obs[0, y, x] = 1.0
+
+        # Nivel 1: Player 1
+        x1, y1 = int(self.player1.position.x), int(self.player1.position.y)
+        if 0 <= x1 < self.grid_cols and 0 <= y1 < self.grid_rows:
+            self.obs[1, y1, x1] = 1.0
+
+        # Nivel 2: Player 2
+        x2, y2 = int(self.player2.position.x), int(self.player2.position.y)
+        if 0 <= x2 < self.grid_cols and 0 <= y2 < self.grid_rows:
+            self.obs[2, y2, x2] = 1.0
+
+        # Nivel 3: Estelas
+        for trail in self.trails:
+            for (x, y, _) in trail.lightPoints:
+                if 0 <= x < self.grid_cols and 0 <= y < self.grid_rows:
+                    self.obs[3, y, x] = 1.0
+
+        # Nivel 4 y 5: Dirección player 1
+        if 0 <= x1 < self.grid_cols and 0 <= y1 < self.grid_rows:
+            self.obs[4, y1, x1] = self.player1.direction.x
+            self.obs[5, y1, x1] = self.player1.direction.y
+
+        # Nivel 6 y 7: Dirección player 2
+        if 0 <= x2 < self.grid_cols and 0 <= y2 < self.grid_rows:
+            self.obs[6, y2, x2] = self.player2.direction.x
+            self.obs[7, y2, x2] = self.player2.direction.y
 
         
+    def get_obstacles_from_obs(self):
+        # obs: shape (8, filas, columnas)
+        # 0: Bordes, 1: Player 1, 2: Player 2, 3: Estelas
+        # 0=libre, 1=muro, 2=estela, 3=jugador
+        mat = np.zeros((self.grid_rows, self.grid_cols), dtype=np.int8)
+        mat[self.obs[0] == 1] = 1  # Bordes
+        mat[self.obs[3] == 1] = 2  # Estelas
+        mat[self.obs[1] == 1] = 3  # Player 1
+        mat[self.obs[2] == 1] = 3  # Player 2
+        return mat
 
-#    def build_Obs_Matrix(self): 
-#        self.obs.fill(0)  #elimina rastros de frames anteriores 
+    def get_obs_in_vision(self, obs, vision):  #retornará un tensor con las observaciones de las casillas visibles en el cono de visión
+        """
+        obs: np.ndarray de shape (8, filas, columnas)
+        vision: set de (x, y) coordenadas visibles
+        Devuelve: np.ndarray de shape (num_casillas_visibles, 8)
+        """
+        obs_list = []
+        for (x, y) in vision:  #compara cada dato del set de visión con las coordenadas del tensor obs
+            obs_list.append(obs[:, y, x]) #extrae la observación de cada casilla visible del tensor obs
+        if obs_list:
+            return np.stack(obs_list) #devuelve un tensor con las observaciones de las casillas visibles (filas = num_casillas_visibles_cono, columnas = 8)
+        else:
+            return np.zeros((0, obs.shape[0])) #devuelve un tensor vacío si no hay casillas visibles
 
-        #Nivel 0 (Bordes)
-#       self.obs[0, 0, :] = 1.0 #en el nivel 0 llenará la fila 0 y todas las columnas de 1's, (parte superior del tablero)
-#        self.obs[0, -1, :] = 1.0 #en el nivel 0 llenará la última fila y todas las columnas de 1's (parte inferior del tablero)
-#        self.obs[0, :, 0] = 1.0 #primera columna del tablero
-#        self.obs[0, :, -1] = 1.0 #última columna del tablero
 
-        #Nivel 1 (player 1)
-#        x1 = int(self.player1.position.x)
-#        y1 = int(self.player1.position.y)
-#        self.obs[1, y1, x1] = 1.0 #en el nivel 1 llenará de 1's las posiciones x e y de player 1 (las filas son las Y en el plano)
 
-        #Nivel 2 (player 2)
-#        x2 = int(self.player2.position.x)
-#        y2 = int(self.player2.position.y)
-#        self.obs[2, y2, x2] = 1.0 #en el nivel 2 llenará de 1's las posiciones x e y de player 2
-
-        #Nivel 3 (Trzo de luz)
-#        for pos in self.trail1.lightPoints + self.trail2.lightPoints:  #recorre ambas posiciones de las matrices una al aldo de la otra concatenadas peor primero recorre las de p1 y luego de p2
-#            lx = int(pos[0])                                   #las X de la luz (0 poruqe ahí está X en la coordenada pos)
-#            ly = int(pos[1])                                   #Las Y de la luz  (1 porque aí está Y en la coordenada pos)           
-#            if 0 <= ly < self.grid_height and 0 <= lx < self.grid_width:      #asegura que las coordenadas estén dentro de tamaño de la matriz (tamaño de tablero) y llena de 1's esas posiciones
-#                self.obs[3, ly, lx] = 1.0
-        
-        #Nivel 4 (dirección x de player 1) 
-#        self.obs[4, y1, x1] = self.player1.direction.x  #Pone la dirección del p1 en x en su posición
-        
-        #Nivel 5 (dirección y de player 1)
-#        self.obs[5, y1, x1] = self.player1.direction.y  #Pone la dirección del p1 en y en su posición
-
-        #Nivel 6 (dirección x de player 2) 
-#        self.obs[6, y2, x2] = self.player2.direction.x  #Pone la dirección del p2 en x en su posición
-        
-        #Nivel 7 (dirección y de player 2)
-#        self.obs[7, y2, x2] = self.player2.direction.y 
