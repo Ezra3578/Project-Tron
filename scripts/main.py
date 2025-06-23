@@ -119,6 +119,19 @@ while tron_game.running:
 
     
 
+
+        
+
+    tron_game.screen.fill((0, 0, 0))  # <--- limpia la pantalla
+    tron_game.draw_borders()
+    tron_game.player1.draw_player()
+    tron_game.player2.draw_player()
+    tron_game.check_collitions()
+
+    if not tron_game.player1.isAlive or not tron_game.player2.isAlive:
+            tron_game.running = False
+
+
     tron_game.update_state()
     
     tron_game.build_Obs_Matrix() #construye la matriz de observación
@@ -140,8 +153,6 @@ while tron_game.running:
     #player 4 
     vision4 = tron_game.player4.get_cone_vision(tron_game.grid_cols, tron_game.grid_rows, obstacles) #retorna un set de coordenadas (x,y) que son visibles para el jugador 4
     obs_visible4 = tron_game.get_obs_in_vision(tron_game.obs, vision4) #retorna un tensor con las observaciones de las casillas visibles en el cono de visión
-
-    
 
     for (x, y) in vision1: #dibuja el cono de visión del jugador 1
         s = pygame.Surface((tron_game.cell_size, tron_game.cell_size), pygame.SRCALPHA)
@@ -165,6 +176,7 @@ while tron_game.running:
         
     
     #print(np.linspace(2, 19, 4))
+
 
 
     pygame.display.flip()
