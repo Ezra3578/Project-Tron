@@ -107,6 +107,10 @@ while tron_game.running:
         
 
     tron_game.screen.fill((0, 0, 0))  # <--- limpia la pantalla
+    
+    
+
+    tron_game.draw_borders()          # <--- Dibuja los muros aquí
 
     for player in player_list:
         player.draw_player()
@@ -126,10 +130,11 @@ while tron_game.running:
     tron_game.draw_borders()
     tron_game.player1.draw_player()
     tron_game.player2.draw_player()
+    tron_game.player3.draw_player()
+    tron_game.player4.draw_player()
     tron_game.check_collitions()
 
-    if not tron_game.player1.isAlive or not tron_game.player2.isAlive:
-            tron_game.running = False
+    
 
 
     tron_game.update_state()
