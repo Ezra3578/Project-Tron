@@ -2,6 +2,7 @@ import pygame
 from player import Player
 from LightTrail import LightTrail
 import numpy as np
+import random
 
 class TronGame:
     def __init__(self):
@@ -55,7 +56,47 @@ class TronGame:
             self.borders.append((0,row+1))
             self.borders.append((self.grid_cols-1, row+1))
 
-        self.player1 = Player(2, 7, self.screen, "RED", self.cell_size, self.mapping_player1, team="RED") 
+####### #generación de mapas"""
+        self.borders = set(self.borders)  #convertir a set 
+
+        self.other_maps = random.randint(1, 2) #elige un mapa al azar entre 1 y 2 
+
+        if self.other_maps == 1:
+            for col in range(5, 13):
+                self.borders.add((col, 6))
+            for col in range(21, 28):
+                self.borders.add((col, 15))
+            for row in range(5, 16):
+                self.borders.add((17, row))
+
+        if self.other_maps == 2:
+            for col in range(3, 30):
+                self.borders.add((col, 11))
+
+
+##### lo mismo que arriba, pero con numpy#
+        """
+        if self.other_maps == 1:
+            columnas = np.arange(5, 13)         # columnas = [5 6 7 8 9 10 11 12] arreglo de 5 a 13
+            filas = np.full_like(columnas, 6)      # filas = [6 6 6 6 6 6 6 6]  # arreglo de tamaño igual a columnas, con todos los valores iguales a 6
+            self.borders.update(zip(columnas, filas))  # Agrega muros en filas 6 de al coplumna 5 a 13
+
+            columnas = np.arange(21, 28)        # columnas = [21 22 23 24 25 26 27]
+            filas = np.full_like(columnas, 15)     # filas = [15 15 15 15 15 15 15]
+            self.borders.update(zip(columnas, filas))  # Agrega muros en fila 15 de la columna 21 a 28
+
+            columna_fija = np.full_like(np.arange(5, 16), 17)  # columna_fija = [17 17 17 ...] (columna fija) arreglo de tamaño 11 con todos los valores iguales a 17
+            filas = np.arange(5, 16)                     # filas = [5 6 7 8 9 10 11 12 13 14 15]
+            self.borders.update(zip(columna_fija, filas))      # Agrega muros en la columna 17 de la fila 5 a 16
+        
+        if self.other_maps == 2:
+            columnas = np.arange(3, 30)  # columnas = [3 4 5 ... 29] arreglo de 3 a 30
+            filas = np.full_like(columnas, 11)  # filas = [11 11 11 ... 11] arreglo de tamaño igual a columnas
+            self.borders.update(zip(columnas, filas))  # Agrega muros en la fila 11 de la columna 3 a 30
+        """
+
+
+        self.player1 = Player(2, 7, self.screen, "RED", self.cell_size, self.mapping_player1, team="RED")
         self.player2 = Player(31, 7, self.screen, "BLUE", self.cell_size, self.mapping_player2, team="BLUE")
         self.player3 = Player(2, 13, self.screen, "RED", self.cell_size, self.mapping_player3, team="RED")
         self.player4 = Player(31, 13, self.screen, "BLUE", self.cell_size, self.mapping_player4, team="BLUE")
@@ -99,6 +140,7 @@ class TronGame:
                         break
         
     def draw_borders(self):
+       
         for (x, y) in self.borders:
             rect = pygame.Rect(x * self.cell_size, y * self.cell_size, self.cell_size, self.cell_size)
             pygame.draw.rect(self.screen, (200,200,200), rect)

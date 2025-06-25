@@ -107,6 +107,10 @@ while tron_game.running:
         
 
     tron_game.screen.fill((0, 0, 0))  # <--- limpia la pantalla
+    
+    
+
+    tron_game.draw_borders()          # <--- Dibuja los muros aquí
 
     for player in player_list:
         player.draw_player()
