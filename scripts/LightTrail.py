@@ -33,7 +33,7 @@ class LightTrail:
 
                 #para filtrar los rastros que deben desaparecer:
                 self.lightPoints = [
-                (x,y,t) for (x,y,t) in self.lightPoints if current_time - t <self.duration
+                    (x,y,t) for (x,y,t) in self.lightPoints if current_time - t <self.duration
                 ]
         ####
 
