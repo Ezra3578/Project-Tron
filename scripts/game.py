@@ -43,8 +43,8 @@ class TronGame:
 
         
 
-        self.screen = pygame.display.set_mode((1360, 800))
-        self.cell_size = 40 #la casilla es de 40x40 pixeles, es decir, hay 34 casillas en horizontal y 20 en vertical
+        self.screen = pygame.display.set_mode((1400, 840))
+        self.cell_size = 40 #la casilla es de 40x40 pixeles, es decir, hay 35 casillas en horizontal y 20 en vertical
         self.grid_cols = self.screen.get_width() // self.cell_size  #cambiado a columnas
         self.grid_rows = self.screen.get_height() // self.cell_size #cambiado a filas
 
@@ -56,50 +56,45 @@ class TronGame:
             self.borders.append((0,row+1))
             self.borders.append((self.grid_cols-1, row+1))
 
-####### #generación de mapas"""
+#########generación de mapas
         self.borders = set(self.borders)  #convertir a set 
 
-        self.other_maps = random.randint(1, 2) #elige un mapa al azar entre 1 y 2 
-
+        self.other_maps = random.randint(1, 4) #elige un mapa al azar entre 1 y 4
         if self.other_maps == 1:
-            for col in range(5, 13):
-                self.borders.add((col, 6))
-            for col in range(21, 28):
-                self.borders.add((col, 15))
-            for row in range(5, 16):
-                self.borders.add((17, row))
+            self.borders.update((col, 5) for col in range(5, 14))
+            self.borders.update((col, 15) for col in range(21, 30))
+            self.borders.update((17, row) for row in range(4, 17))
+
 
         if self.other_maps == 2:
-            for col in range(3, 30):
-                self.borders.add((col, 11))
+            self.borders.update((col, row) for col in range(3, 13) for row in (4, 12))
+            self.borders.update((col, row) for col in range(22, 32) for row in (8, 16))
+            self.borders.update((22, row) for row in range(4, 8))
+            self.borders.update((12, row) for row in range(13, 17))
+            self.borders.update((17, row) for row in range(8, 13))
 
 
-##### lo mismo que arriba, pero con numpy#
-        """
-        if self.other_maps == 1:
-            columnas = np.arange(5, 13)         # columnas = [5 6 7 8 9 10 11 12] arreglo de 5 a 13
-            filas = np.full_like(columnas, 6)      # filas = [6 6 6 6 6 6 6 6]  # arreglo de tamaño igual a columnas, con todos los valores iguales a 6
-            self.borders.update(zip(columnas, filas))  # Agrega muros en filas 6 de al coplumna 5 a 13
+        if self.other_maps == 3:
+            self.borders.update((col, 16) for col in range(3,10))
+            self.borders.update((col, 10) for col in range(9,27))
+            self.borders.update((col, 4) for col in range (25,32))
+            self.borders.update((17, row) for row in range (4,7))
+            self.borders.update((17, row) for row in range (14,17))
+            
+        if self.other_maps == 4:
 
-            columnas = np.arange(21, 28)        # columnas = [21 22 23 24 25 26 27]
-            filas = np.full_like(columnas, 15)     # filas = [15 15 15 15 15 15 15]
-            self.borders.update(zip(columnas, filas))  # Agrega muros en fila 15 de la columna 21 a 28
+            self.borders.update((col, row) for col in range (9,14) for row in (6,14))
+            self.borders.update((col, row) for col in range (21,26) for row in (6,14))
+            self.borders.update((col, row) for row in range(4, 6) for col in (11,17))
+            self.borders.update((col, row) for row in range(15, 17) for col in (17, 23))
+            self.borders.update([(17,6),(17,7),(17,13),(17,14),(13,10),(21,10)])
 
-            columna_fija = np.full_like(np.arange(5, 16), 17)  # columna_fija = [17 17 17 ...] (columna fija) arreglo de tamaño 11 con todos los valores iguales a 17
-            filas = np.arange(5, 16)                     # filas = [5 6 7 8 9 10 11 12 13 14 15]
-            self.borders.update(zip(columna_fija, filas))      # Agrega muros en la columna 17 de la fila 5 a 16
         
-        if self.other_maps == 2:
-            columnas = np.arange(3, 30)  # columnas = [3 4 5 ... 29] arreglo de 3 a 30
-            filas = np.full_like(columnas, 11)  # filas = [11 11 11 ... 11] arreglo de tamaño igual a columnas
-            self.borders.update(zip(columnas, filas))  # Agrega muros en la fila 11 de la columna 3 a 30
-        """
-
-
-        self.player1 = Player(2, 7, self.screen, "RED", self.cell_size, self.mapping_player1, team="RED")
-        self.player2 = Player(31, 7, self.screen, "BLUE", self.cell_size, self.mapping_player2, team="BLUE")
-        self.player3 = Player(2, 13, self.screen, "RED", self.cell_size, self.mapping_player3, team="RED")
-        self.player4 = Player(31, 13, self.screen, "BLUE", self.cell_size, self.mapping_player4, team="BLUE")
+########Inicializar jugadores
+        self.player1 = Player(3, 6, self.screen, "RED", self.cell_size, self.mapping_player1, team="RED")
+        self.player2 = Player(31, 6, self.screen, "BLUE", self.cell_size, self.mapping_player2, team="BLUE")
+        self.player3 = Player(3, 14, self.screen, "RED", self.cell_size, self.mapping_player3, team="RED")
+        self.player4 = Player(31, 14, self.screen, "BLUE", self.cell_size, self.mapping_player4, team="BLUE")
 
         self.trail1 = LightTrail(self.player1, "RED")
         self.trail2 = LightTrail(self.player2, "BLUE")
@@ -119,25 +114,28 @@ class TronGame:
 
     def check_collitions(self):
         for i, player in enumerate(self.players):
+            if not player.isAlive:  #Si el jugador esta muerto no compara sus colisiones
+                continue
+
             player_pos = (int(player.position.x), int(player.position.y))       #recorre los jugadores y guarda sus posiciones
 
-            if player.has_moved:        #si el jugador ya se movio detecta colisiones (evitar colision en el frame inicial)
+            if not player.has_moved:        #si el jugador ya se movio detecta colisiones (evitar colision en el frame inicial)
+                continue
+
+            for trail in self.trails:   #recorre las listas de trazos de luz
+                if player_pos in trail.lightCords:    #si las posiciones coinciden hay colision
+                    if trail.player == player:      #muerte por estela propia
+                            print(f"Jugador {i+1} ({player.color}) colisionó con **su propia** estela en: {x},{y}")
+                    else:   #muerte por estela enemiga
+                        print(f"Jugador {i+1} ({player.color}) colisionó con la estela **enemiga** en: {x},{y}")
+                    player.isAlive = False 
+                    break  # Detenemos después de la primera colisión
             
-                for trail in self.trails:   #recorre las listas de trazos de luz
-                    for (x, y, _) in trail.lightPoints:
-                        if (x, y) == player_pos:    #si las posiciones coinciden hay colision
-                                if trail.player == player:      #muerte por estela propia
-                                    print(f"Jugador {i+1} ({player.color}) colisionó con **su propia** estela en: {x},{y}")
-                                else:   #muerte por estela enemiga
-                                    print(f"Jugador {i+1} ({player.color}) colisionó con la estela **enemiga** en: {x},{y}")
-                                player.isAlive = False
-                                break  # Detenemos después de la primera colisión
-                
-                for (x,y) in self.borders:
-                    if (x,y) == player_pos:
-                        print(f"El jugador {i+1} colisiono con un muro")
-                        player.isAlive = False
-                        break
+            for (x,y) in self.borders:
+                if (x,y) == player_pos:
+                    print(f"El jugador {i+1} colisiono con un muro")
+                    player.isAlive = False
+                    break
         
     def draw_borders(self):
        
