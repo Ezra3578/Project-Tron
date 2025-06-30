@@ -5,8 +5,11 @@ import numpy as np
 import random
 
 class TronGame:
-    def __init__(self):
-        
+    def __init__(self, render=True):
+
+        self.render = render
+        self.simulated_time = 0
+
         #diccionario de teclas para cada jugador
         self.mapping_player1 = {
             'left': pygame.K_a,
@@ -41,12 +44,16 @@ class TronGame:
             'toggle': pygame.K_RCTRL
         }
 
-        
+        width = 1400
+        height = 840
 
-        self.screen = pygame.display.set_mode((1400, 840))
+        if self.render:
+            self.screen = pygame.display.set_mode((width, height))
+        else: 
+            self.screen = None    
         self.cell_size = 40 #la casilla es de 40x40 pixeles, es decir, hay 35 casillas en horizontal y 20 en vertical
-        self.grid_cols = self.screen.get_width() // self.cell_size  #cambiado a columnas
-        self.grid_rows = self.screen.get_height() // self.cell_size #cambiado a filas
+        self.grid_cols = width // self.cell_size  #cambiado a columnas
+        self.grid_rows = height // self.cell_size #cambiado a filas
 
         self.borders = []
         for col in range(self.grid_cols):
@@ -56,7 +63,7 @@ class TronGame:
             self.borders.append((0,row+1))
             self.borders.append((self.grid_cols-1, row+1))
 
-#########generación de mapas
+        ######generación de mapas
         self.borders = set(self.borders)  #convertir a set 
 
         self.other_maps = random.randint(1, 4) #elige un mapa al azar entre 1 y 4
@@ -124,41 +131,68 @@ class TronGame:
 
             for trail in self.trails:   #recorre las listas de trazos de luz
                 if player_pos in trail.lightCords:    #si las posiciones coinciden hay colision
+                    
+                    """"#Aqui se identifica quien murio y con que estela
                     if trail.player == player:      #muerte por estela propia
-                            print(f"Jugador {i+1} ({player.color}) colisionó con **su propia** estela en: {x},{y}")
+                            print(f"Jugador {i+1} ({player.color}) colisionó con **su propia** estela en: {player_pos[0]},{player_pos[1]}")
                     else:   #muerte por estela enemiga
-                        print(f"Jugador {i+1} ({player.color}) colisionó con la estela **enemiga** en: {x},{y}")
+                        print(f"Jugador {i+1} ({player.color}) colisionó con la estela **enemiga** en: {player_pos[0]},{player_pos[1]}")
+                    """
+                    
                     player.isAlive = False 
                     break  # Detenemos después de la primera colisión
             
             for (x,y) in self.borders:
                 if (x,y) == player_pos:
-                    print(f"El jugador {i+1} colisiono con un muro")
+                    #print(f"El jugador {i+1} colisiono con un muro")   #Colisiona con un muro
                     player.isAlive = False
                     break
         
     def draw_borders(self):
-       
         for (x, y) in self.borders:
             rect = pygame.Rect(x * self.cell_size, y * self.cell_size, self.cell_size, self.cell_size)
-            pygame.draw.rect(self.screen, (200,200,200), rect)
+            if self.render:
+                pygame.draw.rect(self.screen, (200,200,200), rect)
     
-    def update_state(self):
-        
+    def update_state(self, dt):
         self.build_Obs_Matrix()
 
-        dt = self.clock.tick(60)
-
+        self.simulated_time += dt/1000.0
 
         for trail in self.trails:
-            trail.updateTrail()
-            trail.drawTrail(self.screen, self.cell_size)
-
-
+            trail.updateTrail(self.simulated_time)
 
         # Actualizamos el movimiento de cada jugador con su propias teclas
         for player in self.players:
             player.move(dt)
+        
+        self.check_collitions() #comprueba colisiones
+        
+    
+    def draw(self, visions):
+        if not self.render:
+            return
+        self.screen.fill((0,0,0))
+        self.draw_borders()
+
+        for trail in self.trails:
+            trail.drawTrail(self.screen, self.cell_size, self.simulated_time)
+        for player in self.players:
+            player.draw_player()
+
+
+        #Dibuja los conos de vision
+        vision_colors = [ (255,255,0,80), (0,255,255,80), (255,0,255,80), (255,165,0,80)]
+
+        for i, (player,vision) in enumerate(zip(self.players, visions)):
+            if not player.isAlive:
+                continue
+            
+            for x, y in vision:
+            
+                s = pygame.Surface((self.cell_size, self.cell_size), pygame.SRCALPHA)
+                s.fill(vision_colors[i])  # Amarillo semitransparente
+                self.screen.blit(s, (x * self.cell_size, y * self.cell_size))
 
     def build_Obs_Matrix(self):
         """

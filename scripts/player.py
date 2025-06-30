@@ -47,6 +47,8 @@ class Player:
             self.old_position = self.position.copy() #se guarda la posicion antes de moverse para luego pasarla al trazo de luz
             self.position += self.direction    #actualiza la posición
             self.has_moved = True
+        else:
+            self.has_moved = False
            
 
     def change_direction(self, new_dir):
