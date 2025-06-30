@@ -12,11 +12,11 @@ class LightTrail:
         self.duration = 10 #numero de segundos que tarda en desaparecer  
         
         
-
-    def updateTrail(self):
-
-        current_time = time.time()
-
+    def updateTrail(self, current_time):
+        if not self.player.isAlive: #Si el jugador muere se elimina su estela
+            self.lightPoints.clear()
+            self.lightCords.clear()
+            return
         #Filtra los trazos viejos aunque el trazo se haya apagado
         self.lightPoints = [
                     (x,y,t) for (x,y,t) in self.lightPoints if current_time - t <self.duration
@@ -24,7 +24,7 @@ class LightTrail:
 
         self.lightCords = set((x, y) for (x, y, t) in self.lightPoints)    #Filtra las cords usando lightPoints
         
-        if self.player.getTrailEstate():  #Solo guardar la posición si la estela está encendida
+        if self.player.isAlive and self.player.getTrailEstate():  #Solo guardar la posición si la estela está encendida y el jugador esta vivo
                 
                 pos = (int(self.player.old_position.x), int(self.player.old_position.y))    #Separa la posicion para el trazo
                 timed_pos = (pos[0], pos[1], current_time)                                  #Del tiempo en el que se genera
@@ -32,9 +32,8 @@ class LightTrail:
                 self.lightCords.add(pos)                                                    #Guarda solo las cords del trazo
 
 
-    def drawTrail(self, screen,cell_size):
+    def drawTrail(self, screen, cell_size, current_time):
 
-        current_time = time.time()
         for x, y, t in self.lightPoints:
             transparency = max(0, 255 - int(255 * ((current_time - t) / self.duration)))   #Hace que el bloque se vea más "difuso" en vez de desaparecer de golpe con el tiempo
             faded_color = pygame.Color(self.color.r, self.color.g, self.color.b, self.color.a)
