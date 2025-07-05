@@ -107,7 +107,7 @@ while tron_game.running:
     for i, player in enumerate(tron_game.players):
         if player.isAlive:
             vision = player.get_cone_vision(tron_game.grid_cols, tron_game.grid_rows, obstacles)
-            obs_visible = tron_game.get_obs_in_vision(tron_game.obs, vision)
+            obs_visible = tron_game.get_obs_in_vision(tron_game.obs, vision) #extrae las observaciones de las casillas visibles del cono de visión
         else:
             vision = set()
             obs_visible = np.zeros((0, tron_game.obs.shape[0]), dtype=np.float32)

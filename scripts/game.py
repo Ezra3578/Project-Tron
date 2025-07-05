@@ -276,11 +276,12 @@ class TronGame:
             self.obs[12, y4, x4] = self.player4.direction.x
             self.obs[13, y4, x4] = self.player4.direction.y
 
-    def get_obstacles_from_obs(self):
+    def get_obstacles_from_obs(self):  # extrae los obstaculos de la matriz de observación para cada frame
         # obs: shape (14, filas, columnas)
         # 0: Bordes, 1: Player 1, 2: Player 2, 3: Player 3, 4: Player 4, 5: Estelas
         # 0=libre, 1=muro, 2=estela, 3=jugador
-        mat = np.zeros((self.grid_rows, self.grid_cols), dtype=np.int8)
+        mat = np.zeros((self.grid_rows, self.grid_cols), dtype=np.int8) #genera una matriz de ceros con el tamaño del mapa (filas, columnas)
+        # Asignar valores a la matriz de obstáculos
         mat[self.obs[0] == 1] = 1  # Bordes
         mat[self.obs[5] == 1] = 2  # Estelas
         mat[self.obs[1] == 1] = 3  # Player 1
@@ -299,7 +300,7 @@ class TronGame:
         for (x, y) in vision:  #compara cada dato del set de visión con las coordenadas del tensor obs
             obs_list.append(obs[:, y, x]) #extrae la observación de cada casilla visible del tensor obs
         if obs_list:
-            return np.stack(obs_list) #devuelve un tensor con las observaciones de las casillas visibles (filas = num_casillas_visibles_cono, columnas = 14)
+            return np.stack(obs_list) #devuelve un tensor con las observaciones de las casillas visibles (filas = num_casillas_visibles_cono, columnas = 14 canales)
         else:
             return np.zeros((0, obs.shape[0])) #devuelve un tensor vacío si no hay casillas visibles
 
