@@ -4,7 +4,12 @@ from game import TronGame
 
 import pygame
 import numpy as np
+import random
 
+from player import Player
+from LightTrail import LightTrail
+
+#Se encarga de tomar la vision del agente y poner fijo el tamaño de la vision (pone 0 en lo que no ve)
 def pad_observation(obs_visible, max_length=30): # Asegura que la observación tenga una longitud fija y llena de ceros si es necesario
     current_len = obs_visible.shape[0] # Número de casillas visibles en el cono de visión
     # Si la longitud actual es menor que la máxima, rellenamos con ceros
@@ -15,38 +20,190 @@ def pad_observation(obs_visible, max_length=30): # Asegura que la observación t
         return obs_visible[:max_length]  # Recortamos si se pasa
     return obs_visible
 
+
 class TronParallelEnv(ParallelEnv):
-    def __init__(self):
-        super().__init__()
-        self.game = TronGame(render=True)  # Inicializa el juego Tron renderizando
-        self.screen = self.game.screen
+    
+    metadata = {"render_mode":["human"], "name": "tron"}
+
+    def __init__(self, render_mode=None):
+        self.game = None
         self.agents = ['player_1', 'player_2', 'player_3', 'player_4']
-
-        self.players_dict = {
-            
-            'player_1': self.game.player1,
-            'player_2': self.game.player2,
-            'player_3': self.game.player3,
-            'player_4': self.game.player4,
-        }
-
         self.possible_agents = self.agents.copy()
-        self.obs = np.zeros((14, self.game.grid_rows, self.game.grid_cols), dtype=np.float32)  # Matriz de observación (14 niveles, filas, columnas)
+        self.visions = []
+        self.step_count = 0
+        self.max_steps = 600
         self.observation_space = {
-            agent: spaces.Box(low=0, high=1, shape=(30, 14), dtype=np.float32)  # 30 casillas visibles máximo (coordenadas del cono de visión), 14 canales
+            agent: spaces.Box(low=0, high=1, shape=(30, 14), dtype=np.float32)
             for agent in self.agents
         }
         self.action_space = {
-            agent: spaces.Discrete(4)  # 4 direcciones 
+            agent: spaces.Discrete(5)
             for agent in self.agents
         }
-    
-    def reset(self):
-        pass
-    def step(self, actions):
-        pass
+        self.render_mode = render_mode
+        self.dt = 0
+        self.screen = None
 
-  
+
+    def reset(self):
+        
+        self.game = TronGame()    
+
+        self.step_count = 0
+
+        self.obs = np.zeros((14, self.game.grid_rows, self.game.grid_cols), dtype=np.float32)
+
+        if self.render_mode == "human":
+            self.game.setScreen(pygame.display.set_mode((self.game.width, self.game.height)))
+        else:
+            self.game.setScreen(None)
+
+        self.visions = []
+
+        self.player1 = Player(3, 6, self.game.screen, "RED", self.game.cell_size, self.game.mapping_player1, team="RED")
+        self.player2 = Player(31, 6, self.game.screen, "BLUE", self.game.cell_size, self.game.mapping_player2, team="BLUE")
+        self.player3 = Player(3, 14, self.game.screen, "RED", self.game.cell_size, self.game.mapping_player3, team="RED")
+        self.player4 = Player(31, 14, self.game.screen, "BLUE", self.game.cell_size, self.game.mapping_player4, team="BLUE")
+
+
+        self.trail1 = LightTrail(self.player1, "RED")
+        self.trail2 = LightTrail(self.player2, "BLUE")
+        self.trail3 = LightTrail(self.player3, "RED")
+        self.trail4 = LightTrail(self.player4, "BLUE")
+
+        self.player1.direction = pygame.Vector2(1,0) #inicia moviendose a la derecha
+        self.player2.direction = pygame.Vector2(-1,0) #inicia moviendose a la izquierda
+        self.player3.direction = pygame.Vector2(1,0) #inicia moviendose a la derecha
+        self.player4.direction = pygame.Vector2(-1,0) #inicia moviendose a la izquierda
+
+        self.players_dict = {
+            'player_1': self.player1,
+            'player_2': self.player2,
+            'player_3': self.player3,
+            'player_4': self.player4,
+        }
+
+        #para las hitbox y dibujar xD
+        self.game.players = [self.player1, self.player2, self.player3, self.player4]  #lista de jugadores
+        self.game.trails = [self.trail1, self.trail2, self.trail3, self.trail4] # lista de trazos de luz
+
+        self.build_Obs_Matrix()
+
+        observations = {
+            agent: self.observe(agent)
+            for agent in self.agents
+        }
+
+        return observations
+
+
+    def step(self, actions):
+
+        #Toma de acciones
+        for agent, action in actions.items():
+            self.apply_action(agent, action)
+
+        if self.render_mode == "human":
+            self.dt = self.game.clock.tick(60)
+        else:
+            self.dt = 100
+        
+        # Actualiza el juego
+        self.game.update_state(self.dt)
+
+        #Graficar o no
+        self.render_screen()
+
+        #Contar el paso
+        self.step_count += 1
+
+        #Comprobaciones para finalizacion
+        done_by_steps = self.step_count >= self.max_steps
+        red_dead = self.team_dead("RED")
+        blue_dead = self.team_dead("BLUE")
+
+        #Actualizar datos del mapa
+        self.build_Obs_Matrix()
+
+        self.visions = []
+
+        #Se construyen las observaciones
+        observations = {
+            agent: self.observe(agent)
+            for agent in self.agents
+        }
+
+
+        #inicializar recompensas en 0
+        rewards = {agent: 0.0 for agent in self.agents}
+
+        # Penalización por paso 
+        for agent in self.agents:
+            if self.players_dict[agent].isAlive:
+                rewards[agent] += -0.1
+
+        #Recompensas y penalizaciones por muertes
+        for agent in self.agents:
+            player = self.players_dict[agent]
+
+            if not player.isAlive:
+                rewards[agent] += -20  # Penalización por morir
+
+                killer = self.find_killer(agent)
+
+                if killer and killer != agent:
+                    killer_player = self.players_dict[killer]
+                    victim_player = self.players_dict[agent]
+
+                    if killer_player.team != victim_player.team:
+                        rewards[killer] += 100  # Recompensar al killer si es enemigo
+                    else:
+                        # Penalizar por matar a un aliado:
+                        rewards[killer] -= 35
+
+        #Recompensas por victorias (sin empate)
+        if red_dead != blue_dead and not done_by_steps:
+            winning_team = "BLUE" if red_dead else "RED"
+            for agent, player in self.players_dict.items():
+                if player.team == winning_team:
+                    rewards[agent] += 200
+
+                    
+        # Termina si el jugador muere
+        terminations = {
+            agent: not self.players_dict[agent].isAlive
+            for agent in self.agents
+        }
+
+        
+
+        #Si se cumplen las condiciones se acaba el juego
+        if done_by_steps or red_dead or blue_dead:
+            truncations = {agent: True for agent in self.agents}
+        else:
+            truncations = {agent: False for agent in self.agents}
+
+        #La info que retornara es si el agente esta vivo, si fue asesinado por quien, el equipo y cuantos pasos lleva
+        infos = {}
+        for agent in self.agents:
+            infos[agent] = {
+                "is_alive": self.players_dict[agent].isAlive,
+                "killer": self.find_killer(agent),
+                "team": self.players_dict[agent].team,
+                "step": self.step_count,
+            }
+
+        return observations, rewards, terminations, truncations, infos
+    
+
+
+    def render_screen(self):
+        if self.render_mode == "human":
+            self.game.render = True
+            self.game.draw()
+            self.draw_visions(self.visions)
+            pygame.display.flip()
+
 
    
     def observe(self, agent): #agent debe ser self.game.player1, player2, player3 o player4
@@ -61,11 +218,12 @@ class TronParallelEnv(ParallelEnv):
             vision = set()
             obs_visible = np.zeros((0, self.obs.shape[0]), dtype=np.float32) 
         
-    
+        self.visions.append(vision)
         
         obs_padded = pad_observation(obs_visible)
+
         assert obs_padded.shape == self.observation_space[agent].shape, "Observe no coincide con observation_space"
-        return obs_padded, vision # Devuelve la observación del jugador con padding si es necesario, son observaciones tipo np.ndarray de forma (30, 14) y los conos de cada jugador
+        return obs_padded # Devuelve la observación del jugador con padding si es necesario, son observaciones tipo np.ndarray de forma (30, 14) y los conos de cada jugador
             
     
 
@@ -99,6 +257,7 @@ class TronParallelEnv(ParallelEnv):
 
 
     def draw_visions(self, visions):
+        
         # Colores de visión por jugador
         vision_colors = [(255, 255, 0, 80), (0, 255, 255, 80), (255, 0, 255, 80), (255, 165, 0, 80)]
 
@@ -112,73 +271,56 @@ class TronParallelEnv(ParallelEnv):
             for x, y in vision:
                 s = pygame.Surface((self.game.cell_size, self.game.cell_size), pygame.SRCALPHA)
                 s.fill(vision_colors[i])
-                self.screen.blit(s, (x * self.game.cell_size, y * self.game.cell_size))
+                self.game.screen.blit(s, (x * self.game.cell_size, y * self.game.cell_size))
 
 
+    def apply_action(self, agent, action):
+        player = self.players_dict[agent]
 
+        if action == 0:
+            player.change_direction(pygame.Vector2(0, -1))  # Arriba
+        elif action == 1:
+            player.change_direction(pygame.Vector2(0, 1))   # Abajo
+        elif action == 2:
+            player.change_direction(pygame.Vector2(-1, 0))  # Izquierda
+        elif action == 3:
+            player.change_direction(pygame.Vector2(1, 0))   # Derecha
+        elif action == 4:
+            if random.random() < 0.8:
+                player.trailEnabled = not player.trailEnabled  # Toggle trazo
 
-    def update_state(self, dt):
-        self.game.update_state((dt))
-        self.build_Obs_Matrix()
+    #Muere todo un equipo
+    def team_dead(self, team_name):
+        return all(
+            player.team == team_name and not player.isAlive
+            for player in self.players_dict.values()
+            if player.team == team_name
+        )
 
+    #Hallar el que consiguio la kill
+    def find_killer(self, agent):
+        victim = self.players_dict[agent]
+        killer = self.game.killed_by.get(victim, None)
 
-    @property
-    def player1(self):
-        return self.game.player1
+        if killer is None:
+            return None  # Autodestrucción o muro
 
-    @property
-    def player2(self):
-        return self.game.player2
-
-    @property
-    def player3(self):
-        return self.game.player3
-
-    @property
-    def player4(self):
-        return self.game.player4
-
-    @property
-    def mapping_player1(self):
-        return self.game.mapping_player1
-
-    @property
-    def mapping_player2(self):
-        return self.game.mapping_player2
-
-    @property
-    def mapping_player3(self):
-        return self.game.mapping_player3
-
-    @property
-    def mapping_player4(self):
-        return self.game.mapping_player4
-
-    @property
-    def render(self):
-        return self.game.render
-
-    @property
-    def running(self):
-        return self.game.running
+        # Invertimos el diccionario players_dict para obtener el nombre del agente
+        reverse_dict = {v: k for k, v in self.players_dict.items()}
+        return reverse_dict.get(killer, None)  #Nombre del killer
     
+    def close(self):
+        if self.render_mode == "human":
+            pygame.quit()
+
 
     def draw(self):
         return self.game.draw()
-    
-    @property
-    def clock(self):
-        return self.game.clock
+        
 
- 
-    @running.setter
-    def running(self, value):
-        self.game.running = value
-
-    
-
-    def build_Obs_Matrix(self):
+    def build_Obs_Matrix(self): 
             """
+            Esta es la informacion completa del juego
             Llena self.obs (shape: 8 x filas x columnas) usando coordenadas de casillas.
             Niveles:
             0: Bordes

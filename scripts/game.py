@@ -5,10 +5,11 @@ import numpy as np
 import random
 
 class TronGame:
-    def __init__(self, render=True):
+    def __init__(self):
 
-        self.render = render
         self.simulated_time = 0
+
+        self.killed_by = {}
 
         #diccionario de teclas para cada jugador
         self.mapping_player1 = {
@@ -54,16 +55,14 @@ class TronGame:
             'toggle': pygame.K_RCTRL
         }
 
-        width = 1400
-        height = 840
+        self.width = 1400
+        self.height = 840
 
-        if self.render:
-            self.screen = pygame.display.set_mode((width, height))
-        else: 
-            self.screen = None    
+        self.screen = None
+        
         self.cell_size = 40 #la casilla es de 40x40 pixeles, es decir, hay 35 casillas en horizontal y 20 en vertical
-        self.grid_cols = width // self.cell_size  #cambiado a columnas
-        self.grid_rows = height // self.cell_size #cambiado a filas
+        self.grid_cols = self.width // self.cell_size  #cambiado a columnas
+        self.grid_rows = self.height // self.cell_size #cambiado a filas
 
         self.borders = []
         for col in range(self.grid_cols):
@@ -106,36 +105,19 @@ class TronGame:
             self.borders.update((col, row) for row in range(15, 17) for col in (17, 23))
             self.borders.update([(17,6),(17,7),(17,13),(17,14),(13,10),(21,10)])
 
-        
-########Inicializar jugadores
-        self.player1 = Player(3, 6, self.screen, "RED", self.cell_size, self.mapping_player1, team="RED")
-        self.player2 = Player(31, 6, self.screen, "BLUE", self.cell_size, self.mapping_player2, team="BLUE")
-        self.player3 = Player(3, 14, self.screen, "RED", self.cell_size, self.mapping_player3, team="RED")
-        self.player4 = Player(31, 14, self.screen, "BLUE", self.cell_size, self.mapping_player4, team="BLUE")
-
-
-
-        self.trail1 = LightTrail(self.player1, "RED")
-        self.trail2 = LightTrail(self.player2, "BLUE")
-        self.trail3 = LightTrail(self.player3, "RED")
-        self.trail4 = LightTrail(self.player4, "BLUE")
-
-        self.player1.direction = pygame.Vector2(1,0) #inicia moviendose a la derecha
-        self.player2.direction = pygame.Vector2(-1,0) #inicia moviendose a la izquierda
-        self.player3.direction = pygame.Vector2(1,0) #inicia moviendose a la derecha
-        self.player4.direction = pygame.Vector2(-1,0) #inicia moviendose a la izquierda
-
-
 
         self.clock = pygame.time.Clock()
         self.running = True
-
-        self.players = [self.player1, self.player2, self.player3, self.player4]  #lista de jugadores
-        self.trails = [self.trail1, self.trail2, self.trail3, self.trail4] # lista de trazos de luz
+        self.render = False
+        self.players = []  #lista de jugadores
+        self.trails = [] # lista de trazos de luz
        
 
 
     def check_collitions(self):
+
+        self.killed_by.clear()
+
         for i, player in enumerate(self.players):
             if not player.isAlive:  #Si el jugador esta muerto no compara sus colisiones
                 continue
@@ -148,19 +130,18 @@ class TronGame:
             for trail in self.trails:   #recorre las listas de trazos de luz
                 if player_pos in trail.lightCords:    #si las posiciones coinciden hay colision
                     
-                    """"#Aqui se identifica quien murio y con que estela
-                    if trail.player == player:      #muerte por estela propia
-                            print(f"Jugador {i+1} ({player.color}) colisionó con **su propia** estela en: {player_pos[0]},{player_pos[1]}")
+                    #Aqui se identifica quien murio y con que estela
+                    if trail.player == player:      #Suicidio
+                        self.killed_by[player] = None
                     else:   #muerte por estela enemiga
-                        print(f"Jugador {i+1} ({player.color}) colisionó con la estela **enemiga** en: {player_pos[0]},{player_pos[1]}")
-                    """
+                        self.killed_by[player] = trail.player    
                     
                     player.isAlive = False 
                     break  # Detenemos después de la primera colisión
             
             for (x,y) in self.borders:
                 if (x,y) == player_pos:
-                    #print(f"El jugador {i+1} colisiono con un muro")   #Colisiona con un muro
+                    self.killed_by[player] = None
                     player.isAlive = False
                     break
         
@@ -185,8 +166,6 @@ class TronGame:
         
     
     def draw(self):
-        if not self.render:
-            return
         self.screen.fill((0,0,0))
         self.draw_borders()
 
@@ -195,7 +174,8 @@ class TronGame:
         for player in self.players:
             player.draw_player()
 
-
+    def setScreen(self, screen):
+        self.screen = screen
         
    
 

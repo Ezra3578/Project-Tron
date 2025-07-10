@@ -4,6 +4,7 @@ import numpy as np
 import math
 
 class Player:
+
     def __init__(self, x, y, screen, color, cell_size, key_mapping, team = "RED" or "BLUE"):
         
         self.position = Vector2(x, y) #posición en cada frame
