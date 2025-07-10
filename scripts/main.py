@@ -19,9 +19,6 @@ tron_game = env
 
 
 
-
-
-
 while tron_game.running:
 
 
