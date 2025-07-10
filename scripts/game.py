@@ -74,7 +74,7 @@ class TronGame:
 
         ######generación de mapas
         self.borders = set(self.borders)  #convertir a set 
-
+        
         self.other_maps = random.randint(1, 4) #elige un mapa al azar entre 1 y 4
         if self.other_maps == 1:
             self.borders.update((col, 5) for col in range(5, 14)) 
@@ -104,7 +104,7 @@ class TronGame:
             self.borders.update((col, row) for row in range(4, 6) for col in (11,17))
             self.borders.update((col, row) for row in range(15, 17) for col in (17, 23))
             self.borders.update([(17,6),(17,7),(17,13),(17,14),(13,10),(21,10)])
-
+        
 
         self.clock = pygame.time.Clock()
         self.running = True
