@@ -35,9 +35,9 @@ class TronParallelEnv(ParallelEnv):
         self.possible_agents = self.agents.copy()
         self.visions = []
         self.step_count = 0
-        self.max_steps = 600
+        self.max_steps = 1000
         self.observation_space = {
-            agent: spaces.Box(low=-1, high=1, shape=(38, 14), dtype=np.float32)
+            agent: spaces.Box(low=0, high=1, shape=(38, 3), dtype=np.float32)
             for agent in self.agents
         }
         self.action_space = {
@@ -58,7 +58,7 @@ class TronParallelEnv(ParallelEnv):
 
         self.step_count = 0
 
-        self.obs = np.zeros((14, self.game.grid_rows, self.game.grid_cols), dtype=np.float32)
+        self.obs = np.zeros((3, self.game.grid_rows, self.game.grid_cols), dtype=np.float32)
 
         if self.render_mode == "human":
             self.game.setScreen(pygame.display.set_mode((self.game.width, self.game.height)))
@@ -149,7 +149,7 @@ class TronParallelEnv(ParallelEnv):
         # Penalización por paso 
         for agent in self.agents:
             if self.players_dict[agent].isAlive:
-                rewards[agent] += -0.1
+                rewards[agent] += 0.1
 
         #Recompensas y penalizaciones por muertes
         for agent in self.agents:
@@ -167,8 +167,9 @@ class TronParallelEnv(ParallelEnv):
                     if killer_player.team != victim_player.team:
                         rewards[killer] += 100  # Recompensar al killer si es enemigo
                     else:
+                        pass
                         # Penalizar por matar a un aliado:
-                        rewards[killer] -= 35
+                        #rewards[killer] -= 35
 
         #Recompensas por victorias (sin empate)
         if red_dead != blue_dead and not done_by_steps:
@@ -255,24 +256,21 @@ class TronParallelEnv(ParallelEnv):
     
 
     def get_obstacles_from_obs(self):  # extrae los obstaculos de la matriz de observación para cada frame
-        # obs: shape (14, filas, columnas)
-        # 0: Bordes, 1: Player 1, 2: Player 2, 3: Player 3, 4: Player 4, 5: Estelas
+        # obs: shape (3, filas, columnas)
+        # 0: Bordes, 1: Players, 2: Estelas
         # 0=libre, 1=muro, 2=estela, 3=jugador
         mat = np.zeros((self.game.grid_rows, self.game.grid_cols), dtype=np.int8) #genera una matriz de ceros con el tamaño del mapa (filas, columnas)
         # Asignar valores a la matriz de obstáculos
         mat[self.obs[0] == 1] = 1  # Bordes
-        mat[self.obs[5] == 1] = 2  # Estelas
-        mat[self.obs[1] == 1] = 3  # Player 1
-        mat[self.obs[2] == 1] = 3  # Player 2
-        mat[self.obs[3] == 1] = 3  # Player 3
-        mat[self.obs[4] == 1] = 3  # Player 4
+        mat[self.obs[2] == 1] = 2  # Estelas
+        mat[self.obs[1] == 1] = 3  # Players
         return mat
 
     def get_obs_in_vision(self, obs, vision):  #retornará un tensor con las observaciones de las casillas visibles en el cono de visión
         """
-        obs: np.ndarray de shape (14, filas, columnas)
+        obs: np.ndarray de shape (3, filas, columnas)
         vision: set de (x, y) coordenadas visibles
-        Devuelve: np.ndarray de shape (num_casillas_visibles, 14)
+        Devuelve: np.ndarray de shape (num_casillas_visibles, 3)
         """
         obs_list = []
         for (x, y) in vision:  #compara cada dato del set de visión con las coordenadas del tensor obs
@@ -313,8 +311,9 @@ class TronParallelEnv(ParallelEnv):
         elif action == 3:
             player.change_direction(pygame.Vector2(1, 0))   # Derecha
         elif action == 4:
-            if random.random() < 0.8:
-                player.trailEnabled = not player.trailEnabled  # Toggle trazo
+            pass
+            #if random.random() < 0.8:
+             #   player.trailEnabled = not player.trailEnabled  # Toggle trazo
 
     #Muere todo un equipo
     def team_dead(self, team_name):
@@ -351,19 +350,8 @@ class TronParallelEnv(ParallelEnv):
             Llena self.obs (shape: 8 x filas x columnas) usando coordenadas de casillas.
             Niveles:
             0: Bordes
-            1: Player 1
-            2: Player 2
-            3: Player 3
-            4: Player 4
-            5: Estelas
-            6: Dirección X player 1
-            7: Dirección Y player 1
-            8: Dirección X player 2
-            9: Dirección Y player 2
-            10: Dirección X player 3
-            11: Dirección Y player 3
-            12: Dirección X player 4
-            13: Dirección Y player 4
+            1: Players
+            2: Estelas
             """
             self.obs.fill(0)  # limpia todo
 
@@ -372,48 +360,14 @@ class TronParallelEnv(ParallelEnv):
                 if 0 <= x < self.game.grid_cols and 0 <= y < self.game.grid_rows:
                     self.obs[0, y, x] = 1.0
 
-            # Nivel 1: Player 1
-            x1, y1 = int(self.player1.position.x), int(self.player1.position.y)
-            if 0 <= x1 < self.game.grid_cols and 0 <= y1 < self.game.grid_rows:
-                self.obs[1, y1, x1] = 1.0
+            # Nivel 1: Players
+            for player in self.game.players:
+                x, y = int(player.position.x), int(player.position.y)
+                if 0 <= x < self.game.grid_cols and 0 <= y < self.game.grid_rows:
+                    self.obs[1, y, x] = 1.0
 
-            # Nivel 2: Player 2
-            x2, y2 = int(self.player2.position.x), int(self.player2.position.y)
-            if 0 <= x2 < self.game.grid_cols and 0 <= y2 < self.game.grid_rows:
-                self.obs[2, y2, x2] = 1.0
-            
-            # Nivel 3: Player 3
-            x3, y3 = int(self.player3.position.x), int(self.player3.position.y)
-            if 0 <= x3 < self.game.grid_cols and 0 <= y3 < self.game.grid_rows:
-                self.obs[3, y3, x3] = 1.0
-
-            # Nivel 4: Player 4
-            x4, y4 = int(self.player4.position.x), int(self.player4.position.y)
-            if 0 <= x4 < self.game.grid_cols and 0 <= y4 < self.game.grid_rows:
-                self.obs[4, y4, x4] = 1.0
-
-            # Nivel 5: Estelas
+            # Nivel 2: Estelas
             for trail in self.game.trails:
                 for (x, y, _) in trail.lightPoints:
                     if 0 <= x < self.game.grid_cols and 0 <= y < self.game.grid_rows:
-                        self.obs[5, y, x] = 1.0
-
-            # Nivel 6 y 7: Dirección player 1
-            if 0 <= x1 < self.game.grid_cols and 0 <= y1 < self.game.grid_rows:
-                self.obs[6, y1, x1] = self.player1.direction.x
-                self.obs[7, y1, x1] = self.player1.direction.y
-
-            # Nivel 8 y 9: Dirección player 2
-            if 0 <= x2 < self.game.grid_cols and 0 <= y2 < self.game.grid_rows:
-                self.obs[8, y2, x2] = self.player2.direction.x
-                self.obs[9, y2, x2] = self.player2.direction.y
-
-            # Nivel 10 y 11: Dirección player 3
-            if 0 <= x3 < self.game.grid_cols and 0 <= y3 < self.game.grid_rows:
-                self.obs[10, y3, x3] = self.player3.direction.x
-                self.obs[11, y3, x3] = self.player3.direction.y
-
-            # Nivel 12 y 13: Dirección player 4
-            if 0 <= x4 < self.game.grid_cols and 0 <= y4 < self.game.grid_rows:
-                self.obs[12, y4, x4] = self.player4.direction.x
-                self.obs[13, y4, x4] = self.player4.direction.y
+                        self.obs[2, y, x] = 1.0

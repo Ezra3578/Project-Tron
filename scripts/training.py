@@ -48,7 +48,7 @@ ray.init(ignore_reinit_error=True)
 
 algorithm = config.build()
 
-for i in range(1000):
+for i in range(250):
     results = algorithm.train()
     print(f"Iter {i}: reward_red_team = {results['policy_reward_mean'].get('red_team_policy')}, "
           f"reward_blue_team = {results['policy_reward_mean'].get('blue_team_policy')}")
