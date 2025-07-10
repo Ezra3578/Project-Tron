@@ -1,6 +1,10 @@
-from pettingzoo.utils import ParallelEnv
-from gymnasium import spaces
+import gymnasium as gym
+
+from pettingzoo.utils.env import ParallelEnv
 from game import TronGame
+
+from gymnasium import spaces
+from gymnasium.spaces import Discrete
 
 import pygame
 import numpy as np
@@ -10,7 +14,7 @@ from player import Player
 from LightTrail import LightTrail
 
 #Se encarga de tomar la vision del agente y poner fijo el tamaño de la vision (pone 0 en lo que no ve)
-def pad_observation(obs_visible, max_length=30): # Asegura que la observación tenga una longitud fija y llena de ceros si es necesario
+def pad_observation(obs_visible, max_length=38): # Asegura que la observación tenga una longitud fija y llena de ceros si es necesario
     current_len = obs_visible.shape[0] # Número de casillas visibles en el cono de visión
     # Si la longitud actual es menor que la máxima, rellenamos con ceros
     if current_len < max_length:
@@ -33,7 +37,7 @@ class TronParallelEnv(ParallelEnv):
         self.step_count = 0
         self.max_steps = 600
         self.observation_space = {
-            agent: spaces.Box(low=0, high=1, shape=(30, 14), dtype=np.float32)
+            agent: spaces.Box(low=-1, high=1, shape=(38, 14), dtype=np.float32)
             for agent in self.agents
         }
         self.action_space = {
@@ -43,9 +47,12 @@ class TronParallelEnv(ParallelEnv):
         self.render_mode = render_mode
         self.dt = 0
         self.screen = None
+        self.observation_spaces = self.observation_space
+        self.action_spaces = self.action_space
 
 
-    def reset(self):
+
+    def reset(self, *, seed=None, options=None):
         
         self.game = TronGame()    
 
@@ -94,7 +101,9 @@ class TronParallelEnv(ParallelEnv):
             for agent in self.agents
         }
 
-        return observations
+        infos = {agent: {} for agent in self.agents}
+    
+        return observations, infos
 
 
     def step(self, actions):
@@ -175,13 +184,14 @@ class TronParallelEnv(ParallelEnv):
             for agent in self.agents
         }
 
-        
+        terminations["__all__"] = all(terminations.values())
 
         #Si se cumplen las condiciones se acaba el juego
         if done_by_steps or red_dead or blue_dead:
             truncations = {agent: True for agent in self.agents}
         else:
             truncations = {agent: False for agent in self.agents}
+        truncations["__all__"] = any(truncations.values())
 
         #La info que retornara es si el agente esta vivo, si fue asesinado por quien, el equipo y cuantos pasos lleva
         infos = {}
@@ -192,6 +202,23 @@ class TronParallelEnv(ParallelEnv):
                 "team": self.players_dict[agent].team,
                 "step": self.step_count,
             }
+
+        # Filtrar agentes que no deben continuar
+        active_agents = [
+            agent for agent in self.agents
+            if not terminations[agent] and not truncations[agent]
+        ]
+
+        # Filtrar observaciones y demás para evitar mezclar trayectorias
+        observations = {agent: obs for agent, obs in observations.items() if agent in active_agents}
+        rewards = {agent: rewards[agent] for agent in active_agents}
+        terminations = {agent: terminations[agent] for agent in active_agents}
+        truncations = {agent: truncations[agent] for agent in active_agents}
+        infos = {agent: infos[agent] for agent in active_agents}
+
+        # Agrega el campo "__all__" de nuevo después de filtrar
+        terminations["__all__"] = len(active_agents) == 0
+        truncations["__all__"] = done_by_steps or red_dead or blue_dead
 
         return observations, rewards, terminations, truncations, infos
     
