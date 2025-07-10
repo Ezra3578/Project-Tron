@@ -3,7 +3,8 @@ import numpy as np
 import time
 
 # Crear entorno
-env = TronParallelEnv()
+#env = TronParallelEnv()
+env = TronParallelEnv(render_mode="human")
 
 # Resetear entorno
 observations = env.reset()
